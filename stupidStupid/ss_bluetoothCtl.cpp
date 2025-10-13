@@ -4,6 +4,12 @@ const char *bluetoothPaireCode = "20:00:00:01:15:08";    // 配对码
 
 uint8_t speedFlag = 0;
 uint8_t vocStage = 3;    // 默认速度3档
+uint8_t  speedLevel = 0;  // 配置速度等级
+uint8_t testCmd[CMD_MAX_LEN]={0};
+uint16_t cmdCount = 0;
+
+const uint16_t speedBase[5] = {5000, 10000, 15000, 20000, 25000};
+const uint16_t acceleratedBase[5]= {5000, 5000, 7500, 10000, 10000};
 
 sPs3Dat_t ps3Dat;
 
@@ -35,37 +41,37 @@ void setVelocity()    // 速度档位设置
 {
   if(speedFlag == 1) {
     speedFlag = 0;
-    if(++vocStage == 4)
-      vocStage = 0;
+    if(++speedLevel == 5)
+      speedLevel = 0;
   }
   else {
     return;
   }
 
-  switch(vocStage) {
-    case 0:
-      // 速度0 停止
-      matDat.speedMax = 0;
-      break;
-    case 1:
-      // 速度1 低
-      matDat.speedMax = 100;
-      break;
-    case 2:
-      // 速度2 中
-      matDat.speedMax = 200;
-      break;
-    case 3:
-      // 速度3 高
-      matDat.speedMax = 300;
-      break;
-    default:
-      matDat.speedMax = 0;
-      break;
-  }
+  // switch(vocStage) {
+  //   case 0:
+  //     // 速度0 停止
+  //     matDat.speedMax = 0;
+  //     break;
+  //   case 1:
+  //     // 速度1 低
+  //     matDat.speedMax = 100;
+  //     break;
+  //   case 2:
+  //     // 速度2 中
+  //     matDat.speedMax = 200;
+  //     break;
+  //   case 3:
+  //     // 速度3 高
+  //     matDat.speedMax = 300;
+  //     break;
+  //   default:
+  //     matDat.speedMax = 0;
+  //     break;
+  // }
 #ifdef SS_BT_DEBUG
-  Serial.print("Current speed MAX:");
-  Serial.println(matDat.speedMax);
+  Serial.print("Current speedLevel:");
+  Serial.println(speedLevel);
 #endif
 }
 
@@ -136,18 +142,34 @@ void notify()
       float angleTemp = angle * 180.0 / PI;    // 转换为角度值
       matDat.angleValue = (int)angleTemp;
 
+      if(matDat.angleValue > 90){
+        matDat.angleValue-= 90;
+      }else{
+        matDat.angleValue += 270;
+      }
+      matDat.angleValue  = -1 * (matDat.angleValue - 360);
+
       float length = sqrt((float)(ps3Dat.lX * ps3Dat.lX + ps3Dat.lY * ps3Dat.lY));    // 计算摇杆偏移量长度
       if(length > 128.0)
         length = 128.0;                     // 限制最大值为128
       matDat.speedRate = length / 128.0;    // 计算速度比例，范围0~1
 
       matDat.spinSpeedRate = 0;
+      _driveMotor(matDat.angleValue, matDat.speedRate);
     }
     else {
       matDat.spinSpeedRate = (float)ps3Dat.rX / 128.0;    // 计算旋转速度比例，范围-1~1
       matDat.angleValue = 0;
 
       matDat.speedRate = 0;
+
+
+      if(matDat.spinSpeedRate > 0){
+        _rotary(d_right, matDat.spinSpeedRate);
+      }else{
+        _rotary(d_left, -matDat.spinSpeedRate);
+      }
+
     }
     pritnMatData();
   }
@@ -171,6 +193,6 @@ void pritnMatData(void)
   Serial.println(matDat.angleValue);
   Serial.print("spinSpeedRate:");
   Serial.println(matDat.spinSpeedRate);
-  _driveMotor(matDat.angleValue, matDat.speedRate);
+  
   // #endif
 }

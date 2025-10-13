@@ -3,24 +3,6 @@
 
 sMatDat_t matDat;
 
-#define CMD_MAX_LEN 120
-// 轮子索引：LF, RF, LR, RR
-enum { LF = 0, RF = 1, LR = 2, RR = 3 };
-
-typedef enum{
-  d_left = 0,
-  d_right = 1,
-}eDirection_t;
-uint8_t testCmd[CMD_MAX_LEN]={0};
-uint16_t cmdCount = 0;
-uint8_t  speedLevel = 0;  // 配置速度等级
-const uint16_t speedBase[5] = {5000, 10000, 15000, 20000, 25000};
-const uint16_t acceleratedBase[5]= {5000, 5000, 7500, 10000, 10000};
-
-void _driveMotor(uint16_t directionAngle, float speed);
-void _rotary(eDirection_t direction, float speed);
-void computeRawWheelSpeeds(float V, float theta_deg, float out[4]);
-void normalizeWheelSpeeds(const float in[4], float out[4]);
 
 
 // ----------------------------------------------------------------------------

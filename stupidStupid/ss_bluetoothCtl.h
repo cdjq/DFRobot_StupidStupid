@@ -8,6 +8,28 @@
 
 #define SS_BT_DEBUG    // 调试开关
 
+typedef enum{
+  d_left = 0,
+  d_right = 1,
+}eDirection_t;
+
+#define CMD_MAX_LEN 120
+// 轮子索引：LF, RF, LR, RR
+enum { LF = 0, RF = 1, LR = 2, RR = 3 };
+
+
+void _driveMotor(uint16_t directionAngle, float speed);
+void _rotary(eDirection_t direction, float speed);
+void computeRawWheelSpeeds(float V, float theta_deg, float out[4]);
+void normalizeWheelSpeeds(const float in[4], float out[4]);
+
+
+extern uint8_t  speedLevel;  
+extern uint8_t testCmd[CMD_MAX_LEN];
+extern uint16_t cmdCount ;
+
+extern const uint16_t speedBase[5];
+extern const uint16_t acceleratedBase[5];
 /*
 左摇杆坐标矢量(leftRockerVecX,leftRockerkVecY),这俩模拟值范围为[-128,127]
 原始摇杆数据
