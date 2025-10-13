@@ -132,7 +132,8 @@ void notify()
     if(rocker_flag == 0){
     float angle = atan2((float)ps3Dat.lY, (float)ps3Dat.lX); //计算角度弧度值
     if(angle < 0) angle += 2 * PI; //转换为0~2PI范围
-    matDat.angleValue = angle * 180.0 / PI; //转换为角度值
+    float angleTemp = angle * 180.0 / PI; //转换为角度值
+    matDat.angleValue = (int)angleTemp;
 
     float length = sqrt((float)(ps3Dat.lX * ps3Dat.lX + ps3Dat.lY * ps3Dat.lY)); //计算摇杆偏移量长度
     if(length > 128.0) length = 128.0; //限制最大值为128
