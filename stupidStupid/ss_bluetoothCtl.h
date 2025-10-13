@@ -3,7 +3,6 @@
 
 #include <Ps3Controller.h>
 #include <math.h>
-
 #include "Arduino.h"
 #include "stupidStupid.h"
 

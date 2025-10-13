@@ -1,5 +1,5 @@
 #include "ss_bluetoothCtl.h"
-
+void _driveMotor(uint16_t directionAngle, float speed);
 const char *bluetoothPaireCode = "20:00:00:01:15:08";    // 配对码
 
 uint8_t speedFlag = 0;
@@ -171,5 +171,6 @@ void pritnMatData(void)
   Serial.println(matDat.angleValue);
   Serial.print("spinSpeedRate:");
   Serial.println(matDat.spinSpeedRate);
+  _driveMotor(matDat.angleValue, matDat.speedRate);
   // #endif
 }
