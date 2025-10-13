@@ -71,7 +71,7 @@ void setVelocity()    // 速度档位设置
 
 void notify()
 {
-  static uint8_t rocker_flag = 0;
+  static uint8_t rockerFlag = 0;
   uint8_t        matFlag = 0;
 
   // if( Ps3.event.button_down.square )
@@ -84,17 +84,17 @@ void notify()
 #ifdef SS_BT_DEBUG
     Serial.println("===========Left rocker==========");
 #endif
-    rocker_flag = 0;
+    rockerFlag = 0;
   }
   if(Ps3.event.button_up.circle) {
 #ifdef SS_BT_DEBUG
     Serial.println("==========Right rocker==========");
 #endif
-    rocker_flag = 1;
+    rockerFlag = 1;
   }
 
   //---------------- Analog stick value events ---------------
-  if((abs(Ps3.event.analog_changed.stick.lx) + abs(Ps3.event.analog_changed.stick.ly) > 2) && rocker_flag == 0) {
+  if((abs(Ps3.event.analog_changed.stick.lx) + abs(Ps3.event.analog_changed.stick.ly) > 2) && rockerFlag == 0) {
 
     ps3Dat.lXdata = Ps3.data.analog.stick.lx;
     ps3Dat.lYdata = Ps3.data.analog.stick.ly;
@@ -114,7 +114,7 @@ void notify()
     ps3Dat.lY = 0;
   }
 
-  if((abs(Ps3.event.analog_changed.stick.rx) + abs(Ps3.event.analog_changed.stick.ry) > 2) && rocker_flag == 1) {
+  if((abs(Ps3.event.analog_changed.stick.rx) + abs(Ps3.event.analog_changed.stick.ry) > 2) && rockerFlag == 1) {
 
     ps3Dat.rX = Ps3.data.analog.stick.rx;
 
@@ -129,7 +129,7 @@ void notify()
   }
 
   if(matFlag != 0) {
-    if(rocker_flag == 0) {
+    if(rockerFlag == 0) {
       float angle = atan2((float)ps3Dat.lY, (float)ps3Dat.lX);    // 计算角度弧度值
       if(angle < 0)
         angle += 2 * PI;                       // 转换为0~2PI范围
