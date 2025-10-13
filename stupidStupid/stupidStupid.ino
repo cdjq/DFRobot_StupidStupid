@@ -1,4 +1,8 @@
 #include "crc16_modbus.h"
+#include "stupidStupid.h"
+
+sMatDat_t matDat;
+
 #define CMD_MAX_LEN 120
 uint8_t testCmd[CMD_MAX_LEN]={0};
 uint16_t cmdCount = 0;
@@ -119,10 +123,14 @@ void setup() {
   delay(5);
   motorDisable(4, cmdCount++);
   delay(5);
+
+  initBluetooth();
+
 }
 
 void loop() {
-  // 可以在这里添加其他逻辑
-  //Serial1.println("Hello");
-  delay(1000);
+  if(loopBluetooth()){
+    return;
+  }
+
 }
