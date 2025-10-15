@@ -9,7 +9,7 @@ uint8_t testCmd[CMD_MAX_LEN]={0};
 uint16_t cmdCount = 0;
 
 const uint16_t speedBase[5] = {5000, 10000, 15000, 20000, 25000};
-const uint16_t acceleratedBase[5]= {5000, 5000, 7500, 10000, 10000};
+const uint16_t acceleratedBase[5]= {35000,35000,35000,65000,65000};
 
 sPs3Dat_t ps3Dat;
 
@@ -77,30 +77,19 @@ void setVelocity()    // 速度档位设置
 
 void notify()
 {
-  static uint8_t rockerFlag = 0;
+  uint8_t rockerFlag = 0;
   uint8_t        matFlag = 0;
 
   // if( Ps3.event.button_down.square )
   //     Serial.println("Started pressing the square button");
   if(Ps3.event.button_up.triangle) {
     speedFlag = 1;
+    Ps3.setPlayer(speedLevel);
   }
 
-  if(Ps3.event.button_up.square) {
-#ifdef SS_BT_DEBUG
-    Serial.println("===========Left rocker==========");
-#endif
-    rockerFlag = 0;
-  }
-  if(Ps3.event.button_up.circle) {
-#ifdef SS_BT_DEBUG
-    Serial.println("==========Right rocker==========");
-#endif
-    rockerFlag = 1;
-  }
 
   //---------------- Analog stick value events ---------------
-  if((abs(Ps3.event.analog_changed.stick.lx) + abs(Ps3.event.analog_changed.stick.ly) > 2) && rockerFlag == 0) {
+  if(abs(Ps3.event.analog_changed.stick.lx) + abs(Ps3.event.analog_changed.stick.ly) > 2) {
 
     ps3Dat.lXdata = Ps3.data.analog.stick.lx;
     ps3Dat.lYdata = Ps3.data.analog.stick.ly;
@@ -120,7 +109,7 @@ void notify()
     ps3Dat.lY = 0;
   }
 
-  if((abs(Ps3.event.analog_changed.stick.rx) + abs(Ps3.event.analog_changed.stick.ry) > 2) && rockerFlag == 1) {
+  if(abs(Ps3.event.analog_changed.stick.rx) + abs(Ps3.event.analog_changed.stick.ry) > 2) {
 
     ps3Dat.rX = Ps3.data.analog.stick.rx;
 
@@ -129,6 +118,7 @@ void notify()
     Serial.println(ps3Dat.rX);
 #endif
     matFlag = 1;
+    rockerFlag = 1;
   }
   else {
     ps3Dat.rX = 0;
@@ -154,15 +144,13 @@ void notify()
         length = 128.0;                     // 限制最大值为128
       matDat.speedRate = length / 128.0;    // 计算速度比例，范围0~1
 
-      matDat.spinSpeedRate = 0;
+      // matDat.spinSpeedRate = 0;
       _driveMotor(matDat.angleValue, matDat.speedRate);
     }
     else {
       matDat.spinSpeedRate = (float)ps3Dat.rX / 128.0;    // 计算旋转速度比例，范围-1~1
-      matDat.angleValue = 0;
-
-      matDat.speedRate = 0;
-
+      // matDat.angleValue = 0;
+      // matDat.speedRate = 0;
 
       if(matDat.spinSpeedRate > 0){
         _rotary(d_right, matDat.spinSpeedRate);

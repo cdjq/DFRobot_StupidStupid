@@ -231,6 +231,7 @@ void setup()
   // 打印调试信息到串口 0
   Serial.println("Sending 'Hello' via UART1...");
   initBluetooth();
+  Ps3.setPlayer(speedLevel);
 }
 
 void loop()
@@ -238,4 +239,5 @@ void loop()
   if(loopBluetooth()) {
     return;
   }
+
 }
