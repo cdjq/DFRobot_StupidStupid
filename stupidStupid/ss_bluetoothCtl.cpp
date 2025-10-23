@@ -3,13 +3,13 @@ void _driveMotor(uint16_t directionAngle, float speed);
 const char *bluetoothPaireCode = "20:00:00:01:15:08";    // 配对码
 
 uint8_t speedFlag = 0;
-uint8_t vocStage = 3;    // 默认速度3档
+uint8_t vocStage = 0;    // 默认速度3档
 uint8_t  speedLevel = 0;  // 配置速度等级
 uint8_t testCmd[CMD_MAX_LEN]={0};
 uint16_t cmdCount = 0;
 
-const uint16_t speedBase[5] = {5000, 10000, 15000, 20000, 25000};
-const uint16_t acceleratedBase[5]= {35000,35000,35000,65000,65000};
+const uint16_t speedBase[5] = {30, 50, 100, 320, 320};
+const uint16_t acceleratedBase[5]= {0};
 
 sPs3Dat_t ps3Dat;
 
@@ -144,6 +144,8 @@ void notify()
         length = 128.0;                     // 限制最大值为128
       matDat.speedRate = length / 128.0;    // 计算速度比例，范围0~1
 
+
+
       // matDat.spinSpeedRate = 0;
       _driveMotor(matDat.angleValue, matDat.speedRate);
     }
@@ -173,14 +175,14 @@ void onConnect()
 void pritnMatData(void)
 {
   // #ifdef SS_BT_DEBUG
-  Serial.print("speedMax:");
-  Serial.println(matDat.speedMax);
+  //Serial.print("speedMax:");
+  //Serial.println(matDat.speedMax);
   Serial.print("speedRate:");
   Serial.println(matDat.speedRate);
   Serial.print("angleValue:");
   Serial.println(matDat.angleValue);
-  Serial.print("spinSpeedRate:");
-  Serial.println(matDat.spinSpeedRate);
+  //Serial.print("spinSpeedRate:");
+  //Serial.println(matDat.spinSpeedRate);
   
   // #endif
 }

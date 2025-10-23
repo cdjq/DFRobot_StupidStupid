@@ -1,96 +1,69 @@
 #include "crc16_modbus.h"
 #include "stupidStupid.h"
+#include <stdint.h>
 
+// CRC-8/MAXIM 多项式 (反射后为 0x8C)
+#define CRC8_POLY 0x8C
+#define CRC8_INIT 0x00
 sMatDat_t matDat;
-
-
-
-// ----------------------------------------------------------------------------
-// normalizeWheelSpeeds
-// 将 four[] 按绝对值最大值归一化，使得 max(|four|) == 1（如果全为0则保持0）
-// 输入 in[4]，输出写回到 out[4]（可以与 in 指向同一数组）
-// ----------------------------------------------------------------------------
-void normalizeWheelSpeeds(const float in[4], float out[4]) {
-  float maxAbs = 0.0f;
-  for (int i = 0; i < 4; ++i) {
-    float a = fabsf(in[i]);
-    if (a > maxAbs) maxAbs = a;
+// 计算一个字节的 CRC
+uint8_t crc8_maxim_update(uint8_t crc, uint8_t data)
+{
+  crc ^= data;
+  for (uint8_t i = 0; i < 8; i++) {
+    if (crc & 0x01)
+      crc = (crc >> 1) ^ CRC8_POLY;
+    else
+      crc >>= 1;
   }
-  if (maxAbs <= 1e-6f) {
-    // 全零或接近零，直接复制
-    for (int i = 0; i < 4; ++i) out[i] = 0.0f;
-    return;
+  return crc;
+}
+// 计算整个数据缓冲区的 CRC
+uint8_t crc8_maxim_compute(const uint8_t *data, uint32_t len)
+{
+  uint8_t crc = CRC8_INIT;
+  for (uint32_t i = 0; i < len; i++) {
+    crc = crc8_maxim_update(crc, data[i]);
   }
-  // 归一化
-  for (int i = 0; i < 4; ++i) out[i] = in[i] / maxAbs;
+  return crc;
 }
 
-// ----------------------------------------------------------------------------
-// computeRawWheelSpeeds
-// 计算未归一化的四轮速度（浮点），基于公式：
-// vFL = V*(cosθ + sinθ)
-// vFR = V*(cosθ - sinθ)
-// vLR = V*(cosθ - sinθ)
-// vRR = V*(cosθ + sinθ)
-// 约定：theta_deg 以“正前”为 0°，向右为正（右前为正角）
-// 输出到 out[4]：顺序 LF, RF, LR, RR
-// ----------------------------------------------------------------------------
-void computeRawWheelSpeeds(float V, float theta_deg, float out[4]) {
-  const float theta = theta_deg * (PI / 180.0f); // 转为弧度
-  const float c = cosf(theta);
-  const float s = sinf(theta);
-
-  out[LF] = V * (c + s);
-  out[RF] = V * (c - s);
-  out[LR] = V * (c - s);
-  out[RR] = V * (c + s);
+void motorInit(void)
+{
+  uint8_t sendBuffer[10] = {0x01, 0xA0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02};
+  for(uint8_t j = 1; j <= 4; j++){
+    sendBuffer[0] = j; 
+    for (uint8_t i = 0; i < 10; i++) {
+      Serial1.write(sendBuffer[i]);
+    }
+    delay(5);
+  }
 }
+
 
 // 配置速度命令的函数
-void configureSpeed(uint8_t deviceAddress, uint8_t packetNumber, int32_t targetSpeed, int32_t acceleration) {
-  // 构建命令包
-  uint8_t sendBuffer[20] = {0};
-  uint8_t _deviceAddress = deviceAddress+1;
-  // 协议头
-  sendBuffer[0] = 0xAE;
-  
-  // 包序号
-  sendBuffer[1] = packetNumber;
-  
-  // 设备地址
-  sendBuffer[2] = _deviceAddress;
-  if((_deviceAddress % 2) != 0){
-    targetSpeed *= -1;
+void configureSpeed(uint8_t deviceAddress, int16_t targetSpeed)
+{
+  uint8_t deviceId = deviceAddress+1;  //  地址从 1 开始
+  int16_t speed = targetSpeed;
+  if((deviceId%2 == 0)){
+    speed *= -1;
   }
-  // 命令码
-  sendBuffer[3] = 0x21;
-  
-  // 数据包长度 (目标速度 + 加速度 = 8 字节)
-  sendBuffer[4] = 0x08;
-  
-  // 目标速度 (4字节，单位为 0.01RPM)
-  sendBuffer[8] = (targetSpeed >> 24) & 0xFF;
-  sendBuffer[7] = (targetSpeed >> 16) & 0xFF;
-  sendBuffer[6] = (targetSpeed >> 8) & 0xFF;
-  sendBuffer[5] = targetSpeed & 0xFF;
-  
-  // 加速度 (4字节，单位为 0.01RPM/s)
-  sendBuffer[12] = (acceleration >> 24) & 0xFF;
-  sendBuffer[11] = (acceleration >> 16) & 0xFF;
-  sendBuffer[10] = (acceleration >> 8) & 0xFF;
-  sendBuffer[9]  = acceleration & 0xFF;
-  
-  // CRC16 校验
-  uint16_t crc = CalcCRC16_Modbus(sendBuffer, 13); // CRC计算（从协议头到加速度的字段）
-  
-  // 校验码写入
-  sendBuffer[13] = crc & 0xFF;         // CRC低字节
-  sendBuffer[14] = (crc >> 8) & 0xFF;  // CRC高字节
-  // 发送数据包
-  for (uint8_t i = 0; i < 15; i++) {
-    Serial1.write(sendBuffer[i]);
+  uint8_t sendPackage[20] = {0};
+  sendPackage[0] = deviceId;
+  sendPackage[1] = 0x64;
+  sendPackage[2] = speed >> 8;
+  sendPackage[3] = speed;
+  sendPackage[4] = 0;
+  sendPackage[5] = 0;
+  sendPackage[6] = 0;
+  sendPackage[7] = 0;
+  sendPackage[8] = 0;
+  sendPackage[9] = crc8_maxim_compute(sendPackage, 9);
+  for (uint8_t i = 0; i < 10; i++) {
+    Serial1.write(sendPackage[i]);
   }
-  delay(5); // 不加延时会出现问题
+  delay(4);
 }
 
 // 电机失能 OFF 命令封装函数
@@ -130,93 +103,68 @@ void motorDisable(uint8_t deviceAddress, uint8_t packetNumber) {
 void _rotary(eDirection_t direction, float speed)
 {
   uint16_t realSpeed = speedBase[speedLevel]*speed;
-  uint16_t realAccelerated= acceleratedBase[speedLevel];
+  uint16_t driveSpeed[4] = {0};
   if(direction == d_left){
-    configureSpeed(LF, cmdCount++, realSpeed*-1, realAccelerated);
-    configureSpeed(RF, cmdCount++, realSpeed, realAccelerated);
-    configureSpeed(LR, cmdCount++, realSpeed*-1, realAccelerated);
-    configureSpeed(RR, cmdCount++, realSpeed, realAccelerated);
+    driveSpeed[LF] = -1*realSpeed;
+    driveSpeed[LR] = -1*realSpeed;
+    driveSpeed[RF] = realSpeed;
+    driveSpeed[RR] = realSpeed;
+    
   }else if(direction == d_right){
-    configureSpeed(LF, cmdCount++, realSpeed, realAccelerated);
-    configureSpeed(RF, cmdCount++, realSpeed*-1, realAccelerated);
-    configureSpeed(LR, cmdCount++, realSpeed, realAccelerated);
-    configureSpeed(RR, cmdCount++, realSpeed*-1, realAccelerated);
+    driveSpeed[LF] = realSpeed;
+    driveSpeed[LR] = realSpeed;
+    driveSpeed[RF] = -1*realSpeed;
+    driveSpeed[RR] = -1*realSpeed;
   }
+  configureSpeed(LF, driveSpeed[LF]);
+  configureSpeed(RF, driveSpeed[RF]);
+  configureSpeed(LR, driveSpeed[LR]);
+  configureSpeed(RR, driveSpeed[RR]);
 }
 void _driveMotor(uint16_t directionAngle, float speed)
 {
   uint16_t realSpeed = speedBase[speedLevel]*speed;
   uint16_t realAccelerated= acceleratedBase[speedLevel];
-  float raw[4];
-  float norm[4];
-  int16_t dirveSpeed[5]= {0};
-  // 1) 计算未归一化的四轮比值
-  computeRawWheelSpeeds(1.0f, directionAngle, raw); // V=1 -> 得到方向分布
-  // 2) 归一化（使得最大绝对值 = 1）
-  normalizeWheelSpeeds(raw, norm);
-  Serial.println(norm[LF]);
-  Serial.println(norm[RF]);
-  Serial.println(norm[LR]);
-  Serial.println(norm[RR]);
-
-  dirveSpeed[LF] = realSpeed * norm[LF];
-  dirveSpeed[RF] = realSpeed * norm[RF];
-  dirveSpeed[LR] = realSpeed * norm[LR];
-  dirveSpeed[RR] = realSpeed * norm[RR];
-  
-  configureSpeed(LF, cmdCount++, dirveSpeed[LF], realAccelerated);
-  configureSpeed(RF, cmdCount++, dirveSpeed[RF], realAccelerated);
-  configureSpeed(LR, cmdCount++, dirveSpeed[LR], realAccelerated);
-  configureSpeed(RR, cmdCount++, dirveSpeed[RR], realAccelerated);
-
-#if 0
-  if(directionAngle==0 || directionAngle==360){
-    configureSpeed(FL, cmdCount++, realSpeed, realAccelerated);
-    configureSpeed(FR, cmdCount++, realSpeed, realAccelerated);
-    configureSpeed(RL, cmdCount++, realSpeed, realAccelerated);
-    configureSpeed(RR, cmdCount++, realSpeed, realAccelerated);
-  }else if(directionAngle > 0 && directionAngle < 45){
-
-  }else if(directionAngle==45){
-    configureSpeed(FL, cmdCount++, realSpeed, realAccelerated);
-    configureSpeed(FR, cmdCount++, 0, realAccelerated);
-    configureSpeed(RL, cmdCount++, 0, realAccelerated);
-    configureSpeed(RR, cmdCount++, realSpeed, realAccelerated);
-  }else if(directionAngle > 45 && directionAngle < 90){
-  }else if(directionAngle==90){
-    configureSpeed(FL, cmdCount++, realSpeed, realAccelerated);
-    configureSpeed(FR, cmdCount++, realSpeed*-1, realAccelerated);
-    configureSpeed(RL, cmdCount++, realSpeed*-1, realAccelerated);
-    configureSpeed(RR, cmdCount++, realSpeed, realAccelerated);
-  }else if(directionAngle==135){
-    configureSpeed(FL, cmdCount++, 0, realAccelerated);
-    configureSpeed(FR, cmdCount++, realSpeed*-1, realAccelerated);
-    configureSpeed(RL, cmdCount++, realSpeed*-1, realAccelerated);
-    configureSpeed(RR, cmdCount++, 0, realAccelerated);
-  }else if(directionAngle==180){
-    configureSpeed(FL, cmdCount++, realSpeed*-1, realAccelerated);
-    configureSpeed(FR, cmdCount++, realSpeed*-1, realAccelerated);
-    configureSpeed(RL, cmdCount++, realSpeed*-1, realAccelerated);
-    configureSpeed(RR, cmdCount++, realSpeed*-1, realAccelerated);
-  }else if(directionAngle==225){
-    configureSpeed(FL, cmdCount++, realSpeed*-1, realAccelerated);
-    configureSpeed(FR, cmdCount++, 0, realAccelerated);
-    configureSpeed(RL, cmdCount++, 0, realAccelerated);
-    configureSpeed(RR, cmdCount++, realSpeed*-1, realAccelerated);
-  }else if(directionAngle==270){
-    configureSpeed(FL, cmdCount++, realSpeed*-1, realAccelerated);
-    configureSpeed(FR, cmdCount++, realSpeed, realAccelerated);
-    configureSpeed(RL, cmdCount++, realSpeed, realAccelerated);
-    configureSpeed(RR, cmdCount++, realSpeed*-1, realAccelerated);
-  }else if(directionAngle==315){
-    configureSpeed(FL, cmdCount++, 0, realAccelerated);
-    configureSpeed(FR, cmdCount++, realSpeed, realAccelerated);
-    configureSpeed(RL, cmdCount++, realSpeed, realAccelerated);
-    configureSpeed(RR, cmdCount++, 0, realAccelerated);
+  uint16_t driveSpeed[4] = {0};
+  // 右侧正转并且减速
+  if(directionAngle >= 0 && directionAngle <= 90){
+    int16_t degree = (directionAngle-90)*-1; 
+    float subRight = 1.0f - directionAngle / 90.0;
+    driveSpeed[RF] = driveSpeed[RR] = realSpeed*subRight;
+    driveSpeed[LF] = driveSpeed[LR] = realSpeed;
   }
-#endif
 
+  // 右侧反转并且减速
+  if(directionAngle > 90 && directionAngle <= 180){
+    int16_t degree = (directionAngle-180)*-1; 
+    float subRight = 1.0f - degree / 90.0;
+    driveSpeed[RF] = driveSpeed[RR] = -1 * realSpeed*subRight;
+    driveSpeed[LF] = driveSpeed[LR] = -1 * realSpeed;
+  }
+
+  // 左侧正转并减速
+  if(directionAngle > 270 && directionAngle <= 360){
+    int16_t degree = (directionAngle-360)*-1; 
+    float subLeft = 1.0f - degree / 90.0;
+    driveSpeed[RF] = driveSpeed[RR] = realSpeed;
+    driveSpeed[LF] = driveSpeed[LR] = realSpeed*subLeft;
+  }
+
+  // 左侧反转并减速
+  if(directionAngle > 180 && directionAngle <= 270){
+    int16_t degree = (directionAngle-270)*-1; 
+    float subLeft = 1.0f - degree / 90.0;
+    driveSpeed[RF] = driveSpeed[RR] = -1 * realSpeed;;
+    driveSpeed[LF] = driveSpeed[LR] = -1 * realSpeed*subLeft;
+  }
+
+  
+  configureSpeed(LF, driveSpeed[LF]);
+  configureSpeed(RF, driveSpeed[RF]);
+  configureSpeed(LR, driveSpeed[LR]);
+  configureSpeed(RR, driveSpeed[RR]);
 }
+
 void setup()
 {
   // 启动串口 0，用于调试
@@ -224,12 +172,16 @@ void setup()
 
   // 启动串口 1，设置波特率为 9600
   Serial1.begin(115200, SERIAL_8N1, 16, 17);    // 参数：波特率、数据格式、RX 引脚、TX 引脚
+  delay(100);
+  motorInit();
 
   // 等待串口初始化完成
   delay(1000);
   memset(testCmd, 0, CMD_MAX_LEN);
   // 打印调试信息到串口 0
-  Serial.println("Sending 'Hello' via UART1...");
+  Serial.println("Sending 'Hello' via UART0...");
+  Serial1.println("Sending 'Hello' via UART1...");
+
   initBluetooth();
   Ps3.setPlayer(speedLevel);
 }
