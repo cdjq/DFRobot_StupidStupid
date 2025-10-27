@@ -8,7 +8,7 @@ uint8_t  speedLevel = 0;  // 配置速度等级
 uint8_t testCmd[CMD_MAX_LEN]={0};
 uint16_t cmdCount = 0;
 
-const uint16_t speedBase[5] = {30, 50, 100, 320, 320};
+const uint16_t speedBase[5] = {300, 500, 1000, 1500, 2000};
 const uint16_t acceleratedBase[5]= {0};
 
 sPs3Dat_t ps3Dat;
