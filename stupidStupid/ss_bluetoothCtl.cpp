@@ -1,15 +1,15 @@
 #include "ss_bluetoothCtl.h"
-void _driveMotor(uint16_t directionAngle, float speed);
+void        _driveMotor(uint16_t directionAngle, float speed);
 const char *bluetoothPaireCode = "20:00:00:01:15:08";    // 配对码
 
-uint8_t speedFlag = 0;
-uint8_t vocStage = 0;    // 默认速度3档
-uint8_t  speedLevel = 0;  // 配置速度等级
-uint8_t testCmd[CMD_MAX_LEN]={0};
+uint8_t  speedFlag = 0;
+uint8_t  vocStage = 0;      // 默认速度3档
+uint8_t  speedLevel = 0;    // 配置速度等级
+uint8_t  testCmd[CMD_MAX_LEN] = { 0 };
 uint16_t cmdCount = 0;
 
-const uint16_t speedBase[5] = {30, 50, 100, 320, 320};
-const uint16_t acceleratedBase[5]= {0};
+const uint16_t speedBase[5] = { 30, 50, 100, 320, 320 };
+const uint16_t acceleratedBase[5] = { 0 };
 
 sPs3Dat_t ps3Dat;
 
@@ -78,7 +78,7 @@ void setVelocity()    // 速度档位设置
 void notify()
 {
   uint8_t rockerFlag = 0;
-  uint8_t        matFlag = 0;
+  uint8_t matFlag = 0;
 
   // if( Ps3.event.button_down.square )
   //     Serial.println("Started pressing the square button");
@@ -86,7 +86,6 @@ void notify()
     speedFlag = 1;
     Ps3.setPlayer(speedLevel);
   }
-
 
   //---------------- Analog stick value events ---------------
   if(abs(Ps3.event.analog_changed.stick.lx) + abs(Ps3.event.analog_changed.stick.ly) > 2) {
@@ -132,19 +131,18 @@ void notify()
       float angleTemp = angle * 180.0 / PI;    // 转换为角度值
       matDat.angleValue = (int)angleTemp;
 
-      if(matDat.angleValue > 90){
-        matDat.angleValue-= 90;
-      }else{
+      if(matDat.angleValue > 90) {
+        matDat.angleValue -= 90;
+      }
+      else {
         matDat.angleValue += 270;
       }
-      matDat.angleValue  = -1 * (matDat.angleValue - 360);
+      matDat.angleValue = -1 * (matDat.angleValue - 360);
 
       float length = sqrt((float)(ps3Dat.lX * ps3Dat.lX + ps3Dat.lY * ps3Dat.lY));    // 计算摇杆偏移量长度
       if(length > 128.0)
         length = 128.0;                     // 限制最大值为128
       matDat.speedRate = length / 128.0;    // 计算速度比例，范围0~1
-
-
 
       // matDat.spinSpeedRate = 0;
       _driveMotor(matDat.angleValue, matDat.speedRate);
@@ -154,12 +152,16 @@ void notify()
       // matDat.angleValue = 0;
       // matDat.speedRate = 0;
 
-      if(matDat.spinSpeedRate > 0){
+      if(matDat.spinSpeedRate > 0.1) {
         _rotary(d_right, matDat.spinSpeedRate);
-      }else{
+      }
+      else if(matDat.spinSpeedRate < -0.1) {
         _rotary(d_left, -matDat.spinSpeedRate);
       }
-
+      else {
+        _rotary(d_left, 0);
+        Serial.println("0000");
+      }
     }
     pritnMatData();
   }
@@ -175,14 +177,14 @@ void onConnect()
 void pritnMatData(void)
 {
   // #ifdef SS_BT_DEBUG
-  //Serial.print("speedMax:");
-  //Serial.println(matDat.speedMax);
+  // Serial.print("speedMax:");
+  // Serial.println(matDat.speedMax);
   Serial.print("speedRate:");
   Serial.println(matDat.speedRate);
   Serial.print("angleValue:");
   Serial.println(matDat.angleValue);
-  //Serial.print("spinSpeedRate:");
-  //Serial.println(matDat.spinSpeedRate);
-  
+  // Serial.print("spinSpeedRate:");
+  // Serial.println(matDat.spinSpeedRate);
+
   // #endif
 }
