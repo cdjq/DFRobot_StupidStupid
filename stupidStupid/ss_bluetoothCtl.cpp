@@ -3,12 +3,12 @@ void        _driveMotor(uint16_t directionAngle, float speed);
 const char *bluetoothPaireCode = "20:00:00:01:15:08";    // 配对码
 
 uint8_t  speedFlag = 0;
-uint8_t  vocStage = 0;      // 默认速度3档
+uint8_t  vocStage = 0;      // 默认速度0档   0 1 2 3 4 5个等级
 uint8_t  speedLevel = 0;    // 配置速度等级
 uint8_t  testCmd[CMD_MAX_LEN] = { 0 };
 uint16_t cmdCount = 0;
 
-const uint16_t speedBase[5] = { 30, 50, 100, 320, 320 };
+const uint16_t speedBase[5] = { 300, 500, 1000, 1500, 2000 };
 const uint16_t acceleratedBase[5] = { 0 };
 
 sPs3Dat_t ps3Dat;
@@ -96,10 +96,10 @@ void notify()
     ps3Dat.lY = -ps3Dat.lYdata;
 
 #ifdef SS_BT_DEBUG
-    Serial.print("left Rocker x:");
-    Serial.println(ps3Dat.lX);
-    Serial.print("left Rocker Y:");
-    Serial.println(ps3Dat.lY);
+    // Serial.print("left Rocker x:");
+    // Serial.println(ps3Dat.lX);
+    // Serial.print("left Rocker Y:");
+    // Serial.println(ps3Dat.lY);
 #endif
     matFlag = 1;
   }
@@ -113,8 +113,8 @@ void notify()
     ps3Dat.rX = Ps3.data.analog.stick.rx;
 
 #ifdef SS_BT_DEBUG
-    Serial.print("rightr Rocker x:");
-    Serial.println(ps3Dat.rX);
+    // Serial.print("rightr Rocker x:");
+    // Serial.println(ps3Dat.rX);
 #endif
     matFlag = 1;
     rockerFlag = 1;
@@ -175,10 +175,10 @@ void pritnMatData(void)
   // #ifdef SS_BT_DEBUG
   // Serial.print("speedMax:");
   // Serial.println(matDat.speedMax);
-  Serial.print("speedRate:");
-  Serial.println(matDat.speedRate);
-  Serial.print("angleValue:");
-  Serial.println(matDat.angleValue);
+  // Serial.print("speedRate:");
+  // Serial.println(matDat.speedRate);
+  // Serial.print("angleValue:");
+  // Serial.println(matDat.angleValue);
   // Serial.print("spinSpeedRate:");
   // Serial.println(matDat.spinSpeedRate);
 
