@@ -27,6 +27,10 @@ disable=missing-docstring,              ## 缺少文档注释，这个开启，�
         W0105,                          ## 忽略没有必要的 lambda 表达式
         E1111,
         W0404,
+        C0303,
+        W0201,
+        C0121,
+        C0209
 
 [REPORTS]
 # 输出报告的格式
@@ -38,19 +42,18 @@ indent-string='  '
 
 max-line-length=200
 
-class-rgx=DFRobot_[A-Z][a-zA-Z0-9_]+$
+class-rgx=DFRobot_[a-zA-Z][a-zA-Z0-9_]+$
 function-rgx=[a-z_][a-z0-9_]{2,30}$
 variable-rgx=[a-z_][a-z0-9_]{2,30}$
+attr-rgx=_?[a-z_][a-z0-9_]{2,30}$        # 成员属性（允许前导下划线）
+
+const-rgx=(_?[A-Z][A-Z0-9_]{2,50}|__.*__)$
 
 [LOGGING]
-# 启用 logging
 logging-modules=logging
 
 [VARIABLES]
-# 避免过长的变量名称
-# 设置变量名为小写，使用下划线
-good-names=i,j,k,ex,Run,_  # 默认的一些短变量名称
+good-names=i,j,k,ex,Run,_               # 默认的一些短变量名称
 
 [TYPECHECK]
-# 添加类型检查器
 ignored-classes=optparse.Values

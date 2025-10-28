@@ -10,7 +10,7 @@
 #define SS_BT_DEBUG    // 调试开关
 
 typedef enum {
-  d_left = 0,
+  d_left  = 0,
   d_right = 1,
 } eDirection_t;
 
@@ -48,12 +48,12 @@ extern const uint16_t acceleratedBase[5];
 已映射为正规坐标系
 */
 typedef struct {
-  int16_t lX = 0;    // 左摇杆数据
-  int16_t lY = 0;
+  int16_t lX     = 0;    // 左摇杆数据
+  int16_t lY     = 0;
   int16_t lXdata = 0;    // 左摇杆原始数据
   int16_t lYdata = 0;
 
-  int16_t rX = 0;        // 右摇杆数据
+  int16_t rX     = 0;    // 右摇杆数据
   int16_t rXdata = 0;    // 右摇杆原始数据
 
 } sPs3Dat_t;

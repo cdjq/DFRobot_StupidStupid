@@ -27,7 +27,7 @@ HardwareSerial MotorSerial(1);    // 使用Serial2
 void sendSetIDCommand(uint8_t newID)
 {
   uint8_t rTest[100] = { 0 };
-  int     count = 0;
+  int     count      = 0;
 
   // 此版本无CRC 校验
   uint8_t cmd[10] = { 0xAA, 0x55, 0x53, newID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -35,14 +35,14 @@ void sendSetIDCommand(uint8_t newID)
   Serial.println(newID, HEX);
 
   // 连续发送5次
-  for(int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++) {
     MotorSerial.write(cmd, sizeof(cmd));
     delay(500);
     Serial.print("已发送第 ");
     Serial.print(i + 1);
     Serial.println(" 次设置指令");
-    if(MotorSerial.available()) {
-      while(MotorSerial.available()) {
+    if (MotorSerial.available()) {
+      while (MotorSerial.available()) {
         rTest[count++] = MotorSerial.read();
       }
     }
@@ -64,7 +64,7 @@ int queryMotorID()
   int           recvCount = 0;
 
   // 1) 发送前清空串口接收缓冲
-  while(MotorSerial.available()) {
+  while (MotorSerial.available()) {
     MotorSerial.read();
   }
 
@@ -73,15 +73,15 @@ int queryMotorID()
   MotorSerial.flush();    // 等待写入底层缓冲
   delay(1000);
   // 2) 等待首字节，主超时（等待设备应答的最大时间）
-  unsigned long       startMillis = millis();
-  const unsigned long firstByteTimeout = 500;    // ms, 等待首字节
+  unsigned long       startMillis       = millis();
+  const unsigned long firstByteTimeout  = 500;    // ms, 等待首字节
   bool                firstByteReceived = false;
-  if(MotorSerial.available()) {
-    while(MotorSerial.available()) {
+  if (MotorSerial.available()) {
+    while (MotorSerial.available()) {
       recvBuf[recvCount++] = MotorSerial.read();
     }
   }
-  if(recvCount == 0) {
+  if (recvCount == 0) {
     return -1;
   }
   return recvBuf[0];
@@ -102,16 +102,15 @@ void setup()
 
   Serial.println("开始查询电机ID...");
   int motorID = queryMotorID();
-  if(motorID >= 0) {
+  if (motorID >= 0) {
     Serial.print("电机ID查询结果: 0x");
     Serial.println(motorID, HEX);
-  }
-  else {
+  } else {
     Serial.println("查询失败！");
   }
 
   Serial.println("程序结束。请断电重启以验证ID是否生效。");
-  while(1);
+  while (1);
 }
 
 void loop() {}

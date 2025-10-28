@@ -23,13 +23,6 @@ repos:
           - --config-file
           - ./.github/config/.mypy.ini
 
-  # - repo: https://github.com/psf/black
-  #   rev: 25.9.0
-  #   hooks:
-  #     - id: black
-  #       args:
-  #         - --config=.github/config/pyproject.toml
-
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
