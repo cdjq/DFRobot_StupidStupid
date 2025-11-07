@@ -106,11 +106,29 @@ void configureSpeed(uint8_t deviceAddress, int16_t targetSpeed)
   for (uint8_t i = 0; i < 10; i++) {
     Serial1.write(sendPackage[i]);
   }
-  delay(7);
+  delay(5);
 }
 
 void _rotary(eDirection_t direction, float speed)
 {
+  uint16_t realSpeed     = speedBase[speedLevel] * speed;
+  uint16_t driveSpeed[4] = { 0 };
+  if (direction == d_left) {
+    driveSpeed[LF] = -1 * realSpeed;
+    driveSpeed[LR] = -1 * realSpeed;
+    driveSpeed[RF] = realSpeed;
+    driveSpeed[RR] = realSpeed;
+  } else if (direction == d_right) {
+    driveSpeed[LF] = realSpeed;
+    driveSpeed[LR] = realSpeed;
+    driveSpeed[RF] = -1 * realSpeed;
+    driveSpeed[RR] = -1 * realSpeed;
+  }
+  configureSpeed(LF, driveSpeed[LF]);
+  configureSpeed(RF, driveSpeed[RF]);
+  configureSpeed(LR, driveSpeed[LR]);
+  configureSpeed(RR, driveSpeed[RR]);
+#if 0
   uint16_t realSpeed     = speedBase[speedLevel] * speed;
   uint16_t driveSpeed[4] = { 0 };
   if (speedLevel == 0) {
@@ -128,9 +146,10 @@ void _rotary(eDirection_t direction, float speed)
     configureSpeed(LR, 0);
     configureSpeed(RR, 0);
   }
+#endif
 }
 
-void _driveMotor(uint16_t directionAngle, float speed)
+void _driveMotor(uint16_t directionAngle, float speed)    // 电机驱动函数
 {
   uint16_t realSpeed       = speedBase[speedLevel] * speed;
   uint16_t realAccelerated = acceleratedBase[speedLevel];
@@ -140,9 +159,10 @@ void _driveMotor(uint16_t directionAngle, float speed)
     int16_t degree   = (directionAngle - 90) * -1;
     float   subRight = 1.0f - directionAngle / 90.0;
     if (directionAngle == 90) {
-      subRight = 0.1;
+      driveSpeed[RF] = driveSpeed[RR] = realSpeed * 0.1;
+    } else {
+      driveSpeed[RF] = driveSpeed[RR] = realSpeed * subRight;
     }
-    driveSpeed[RF] = driveSpeed[RR] = realSpeed * subRight;
     driveSpeed[LF] = driveSpeed[LR] = realSpeed;
   }
 
@@ -164,15 +184,26 @@ void _driveMotor(uint16_t directionAngle, float speed)
 
   // 左侧反转并减速
   if (directionAngle > 180 && directionAngle <= 270) {
-    int16_t degree  = (directionAngle - 270) * -1;
+    int16_t degree  = (directionAngle - 270 + 90);
     float   subLeft = 1.0f - degree / 90.0;
-    if (directionAngle == 270) {
-      subLeft = 0.1;
-    }
     driveSpeed[RF] = driveSpeed[RR] = -1 * realSpeed;
     ;
-    driveSpeed[LF] = driveSpeed[LR] = -1 * realSpeed * subLeft;
+    if (directionAngle == 270) {
+      driveSpeed[LF] = driveSpeed[LR] = -1 * realSpeed * 0.1;
+    } else {
+      driveSpeed[LF] = driveSpeed[LR] = -1 * realSpeed * subLeft;
+    }
   }
+
+  // Serial.print("LF:");
+  // Serial.print(driveSpeed[LF]);
+  // Serial.print("RF:");
+  // Serial.print(driveSpeed[RF]);
+  // Serial.print("LR:");
+  // Serial.print(driveSpeed[LR]);
+  // Serial.print("RR:");
+  // Serial.print(driveSpeed[RR]);
+
   configureSpeed(LF, driveSpeed[LF]);
   configureSpeed(RF, driveSpeed[RF]);
   configureSpeed(LR, driveSpeed[LR]);
@@ -183,8 +214,6 @@ void setup()
 {
   // 启动串口 0，用于调试
   Serial.begin(115200);
-
-  // 启动串口 1，设置波特率为 9600
   Serial1.begin(115200, SERIAL_8N1, 16, 17);    // 参数：波特率、数据格式、RX 引脚、TX 引脚
   delay(100);
   motorInit();

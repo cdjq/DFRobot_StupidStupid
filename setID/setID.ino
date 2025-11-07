@@ -97,7 +97,7 @@ void setup()
   delay(1000);
 
   Serial.println("开始设置电机ID...");
-  sendSetIDCommand(0x01);    // 示例：设置为ID 0x04
+  sendSetIDCommand(0x04);    // 示例：设置为ID 0x04
   delay(1000);
 
   Serial.println("开始查询电机ID...");

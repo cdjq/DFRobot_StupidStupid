@@ -1,6 +1,6 @@
 #include "ss_bluetoothCtl.h"
 void        _driveMotor(uint16_t directionAngle, float speed);
-const char *bluetoothPaireCode = "20:00:00:01:15:08";    // 配对码
+const char *bluetoothPaireCode = "20:00:00:00:94:83";    // 配对码
 
 uint8_t  speedFlag            = 0;
 uint8_t  vocStage             = 0;    // 默认速度3档
@@ -148,12 +148,11 @@ void notify()
 
       if (matDat.spinSpeedRate > 0) {
         _rotary(d_right, matDat.spinSpeedRate);
-      } else 
+      } else
         _rotary(d_left, -matDat.spinSpeedRate);
-      }
     }
-    pritnMatData();
   }
+  pritnMatData();
 }
 
 void onConnect()
